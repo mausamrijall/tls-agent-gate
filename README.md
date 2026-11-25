@@ -35,6 +35,7 @@ Profile 0.2** model.
 | `packages/core` | JSON Schemas + runtime validators, canonical signing payload builder, Web Crypto `Ed25519`/`P-256` keys, thumbprints, `X-Agent-*` header codecs. **Zero runtime dependencies.** |
 | `packages/verifier` | Framework-agnostic `verifyAgentRequest` (HTTPS/origin policy, localhost/private blocking, timestamp skew + nonce replay protection, identity fetch/cache, signature & manifest hash verification) plus **Cloudflare Workers** and **Node/Express/Connect** adapters. |
 | `packages/browser` | Browser runtime: `WebWorker` sandboxed fetcher/parser, sanitization, user-consent gate, outbound `fetch` wrapper that signs requests and parses `X-Verified-Agent` / `X-Agent-Manifest` responses, BYOK LLM helper, Trust Inspector. |
+| `packages/sdk` | **Bounded Agent Execution SDK** — a default-deny capability & execution boundary: allowlisted tools/commands with schema validation, origin allowlists, `allowLocalAgents` enforcement, budget/rate/timeout caps, redaction, consent gates, signed remote agent calls, and an immutable hash-chained audit trail. |
 | `packages/cli` | `tls-agent-gate` CLI: `keygen`, `validate`, `probe`. |
 | `examples/site-a-caller` | A conforming Open Agentic Web caller site (manifest + browser runtime + UI) that discovers/calls a peer agent with consent. |
 | `examples/site-b-protected` | A protected service agent site behind the verifier that rejects unverified scrapers/localhost callers. |
@@ -64,6 +65,20 @@ and press **Run signed agent call**. You'll see:
 - the consent prompt before the cross-origin call,
 - a `200` response with `X-Verified-Agent: localhost`,
 - the Trust Inspector log with the exact headers exchanged.
+
+The same page also includes a **Bounded Agent (SDK)** panel proving the
+default-deny boundary:
+
+- **Allowed cross-site call** — succeeds (signed, consent-gated) and returns
+  the protected service's answer;
+- **Denied: unallowlisted tool** — `ERR_TOOL_NOT_FOUND` from the SDK,
+  never executed;
+- **Denied: unallowlisted origin** — `ERR_ORIGIN_BLOCKED` from the SDK,
+  never fetched.
+
+Every outcome lands in the immutable, hash-chained audit feed on the page.
+Site B exposes its own bounded-agent audit trail at
+`http://localhost:4174/debug/audits`.
 
 Meanwhile, `curl http://localhost:4174/api/agent/search?q=agents` (no signature)
 returns `401 {"error":{"code":"ERR_MISSING_IDENTITY_HEADER",…}}`.
@@ -157,6 +172,9 @@ agent-tls-gate-signature-v1
   Python, and Laravel/PHP integration snippets).
 - **Cloudflare Workers** — `createCloudflareHandler`:
   [`packages/verifier/README.md`](packages/verifier/README.md).
+- **Bounded agents (any stack)** — wrap the agent in a deny-by-default
+  capability boundary: `packages/sdk`
+  (see [`packages/sdk/README.md`](packages/sdk/README.md)).
 
 ## Development phases
 
@@ -166,7 +184,8 @@ This repository is built in five phases (all implemented):
 2. `packages/verifier` — edge/server verifier + adapters.
 3. `packages/browser` — browser runtime, consent, WebWorker sandbox.
 4. `packages/cli` — `keygen` / `validate` / `probe`.
-5. `examples/` — Site A (caller) and Site B (protected service), plus this
+5. `packages/sdk` — Bounded Agent Execution SDK (default-deny boundary).
+6. `examples/` — Site A (caller) and Site B (protected service), plus this
    documentation.
 
 ## License

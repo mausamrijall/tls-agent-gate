@@ -143,6 +143,25 @@ export class AgentRuntime {
     return this.keyId;
   }
 
+  /** This agent's identity URL (used for X-Agent-Identity). */
+  get identityUrl(): string {
+    return this.config.identityUrl;
+  }
+
+  /** Manifest SHA-256 advertised by this agent (hex). */
+  get manifestSha256Hex(): string {
+    return this.manifestSha256;
+  }
+
+  /**
+   * Sign an outbound request and return the X-Agent-* headers to attach.
+   * Exposed so the bounded-agent SDK (or any caller) can use this runtime as
+   * an `AgentRequestSigner`.
+   */
+  signOutboundRequest(url: string, method: string, body?: string | Uint8Array | null): Promise<Record<string, string>> {
+    return this.buildSignedHeaders(url, method, body);
+  }
+
   private async buildSignedHeaders(url: string, method: string, body?: string | Uint8Array | null): Promise<Record<string, string>> {
     const target = new URL(url);
     const bodyBytes = typeof body === 'string' ? utf8Encode(body) : body ?? new Uint8Array();

@@ -48,6 +48,22 @@
       <h2>Trust Inspector</h2>
       <div id="inspector"></div>
     </section>
+
+    <section class="card">
+      <h2>Bounded Agent (SDK)</h2>
+      <p class="muted">
+        Every action is checked against the SDK's deny-by-default capability
+        policy before it runs. Explore three cases:
+      </p>
+      <div class="row" style="flex-wrap:wrap">
+        <button id="sdk-allowed">Allowed cross-site call</button>
+        <button id="sdk-denied-tool" style="background:#c2410c">Denied: unallowlisted tool</button>
+        <button id="sdk-denied-origin" style="background:#b91c1c">Denied: unallowlisted origin</button>
+      </div>
+      <pre id="sdk-result">—</pre>
+      <h3>Audit trail (immutable, hash-chained)</h3>
+      <pre id="sdk-audit" style="max-height:260px">—</pre>
+    </section>
   </main>
 
   <script type="module" src="/app.js"></script>

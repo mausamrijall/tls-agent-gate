@@ -1,0 +1,46 @@
+{
+  "name": "@tls-agent-gate/sdk",
+  "version": "0.1.0",
+  "description": "Bounded Agent Execution SDK — a default-deny capability & execution boundary for agents: allowlisted tools/commands, origin allowlists, budget/rate/timeout caps, redaction, consent gates, and an immutable audit trail.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "default": "./dist/esm/index.js"
+    },
+    "./worker": {
+      "types": "./dist/esm/worker.d.ts",
+      "default": "./dist/esm/worker.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "pretest": "npm run build --workspace @tls-agent-gate/core",
+    "prebuild": "npm run build --workspace @tls-agent-gate/core",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tls-agent-gate/core": "*"
+  },
+  "keywords": [
+    "open-agentic-web",
+    "sdk",
+    "bounded-agents",
+    "capabilities",
+    "sandbox",
+    "audit",
+    "consent"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

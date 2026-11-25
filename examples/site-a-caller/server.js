@@ -41,6 +41,7 @@ const MANIFEST = {
 const VENDOR_VIRTUAL = {
   '/vendor/@tls-agent-gate/core/': join(ROOT, 'packages/core/dist/esm/'),
   '/vendor/@tls-agent-gate/browser/': join(ROOT, 'packages/browser/dist/esm/'),
+  '/vendor/@tls-agent-gate/sdk/': join(ROOT, 'packages/sdk/dist/esm/'),
 };
 
 const MIME = {

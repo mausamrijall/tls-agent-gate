@@ -1,16 +1,19 @@
 /**
- * Site A caller app — uses the tls-agent-gate browser runtime.
+ * Site A caller app — uses the tls-agent-gate browser runtime + SDK.
  */
 import {
   AgentRuntime,
   PromptConsentGate,
   TrustInspector,
 } from '/vendor/@tls-agent-gate/browser/index.js';
+import { createBoundedAgent } from '/vendor/@tls-agent-gate/sdk/index.js';
 
 const STATUS = document.querySelector('#status');
 const RESULT = document.querySelector('#result');
 const CALL_BTN = document.querySelector('#call');
 const INSPECTOR_EL = document.querySelector('#inspector');
+const SDK_RESULT = document.querySelector('#sdk-result');
+const SDK_AUDIT = document.querySelector('#sdk-audit');
 
 function setStatus(text, ok = true) {
   STATUS.textContent = text;
@@ -32,6 +35,20 @@ const manifest = {
 };
 
 let runtime = null;
+let bounded = null;
+let manifestText = '';
+
+function renderAudits() {
+  if (!bounded) return;
+  const events = bounded.auditTrail();
+  if (events.length === 0) return;
+  SDK_AUDIT.textContent = events
+    .map((e) => {
+      const reason = e.reason ? ` reason=${e.reason}` : '';
+      return `#${e.seq} ${e.action} kind=${e.kind} subject=${e.subject}${reason} hash=${e.hash.slice(0, 10)}…`;
+    })
+    .join('\n');
+}
 
 async function bootstrap() {
   try {
@@ -40,10 +57,8 @@ async function bootstrap() {
     if (!keyResp.ok) throw new Error(`dev-key fetch failed: HTTP ${keyResp.status}`);
     const privateKeyJwk = await keyResp.json();
 
-    // Use the exact manifest bytes served at /agent-manifest.json so the
-    // signed manifest SHA-256 matches what the verifier will fetch.
     const manifestResp = await fetch('/agent-manifest.json');
-    const manifestText = await manifestResp.text();
+    manifestText = await manifestResp.text();
 
     const inspector = new TrustInspector();
     runtime = await AgentRuntime.create({
@@ -58,7 +73,64 @@ async function bootstrap() {
 
     window.__inspector = inspector;
     inspector.renderInto(INSPECTOR_EL);
-    setStatus('ready — runtime signed with Ed25519 key ' + runtime.agentKeyId.slice(0, 12) + '…');
+
+    // ---- Bounded Agent (SDK) ----------------------------------------
+    const gate = new PromptConsentGate();
+    bounded = await createBoundedAgent({
+      agentId: 'site-a-caller',
+      manifest,
+      identitySigner: {
+        identityUrl: runtime.identityUrl,
+        keyId: runtime.agentKeyId,
+        algorithm: 'Ed25519',
+        manifestSha256: runtime.manifestSha256Hex,
+        sign: (req) => runtime.signOutboundRequest(req.url, req.method, req.body),
+      },
+      policy: {
+        allowedTools: [
+          {
+            name: 'search',
+            argSchema: {
+              type: 'object',
+              properties: { q: { type: 'string' } },
+              required: ['q'],
+              additionalProperties: false,
+            },
+          },
+        ],
+        allowedCommands: ['status'],
+        allowedOrigins: ['http://localhost:4174', 'http://127.0.0.1:4174'],
+        allowLocalAgents: true,
+        maxCallsPerTurn: 20,
+        maxStepsPerTurn: 100,
+        maxPayloadBytes: 4096,
+        executionTimeoutMs: 8000,
+        dataRedactionRules: [{ pattern: /token/i }],
+        requireConsentFor: [{ type: 'cross-site' }],
+      },
+      tools: [
+        {
+          name: 'search',
+          description: 'Search (local demo tool)',
+          executor: (args) => ({ ok: true, tool: 'search', q: args.q }),
+        },
+      ],
+      commands: {
+        status: () => ({ up: true, agent: manifest.name }),
+      },
+      onConsentRequired: async (req) => {
+        const origin = req.origin ? new URL(req.origin).host : 'local';
+        return gate.requestApproval({
+          targetDomain: origin,
+          capabilityIds: req.action.kind === 'agent-call' ? req.action.caps : undefined,
+          description: req.action.kind === 'agent-call' ? 'SDK agent cross-site call' : `SDK ${req.action.kind}: ${req.subject}`,
+        });
+      },
+      onAuditEvent: renderAudits,
+    });
+
+    renderAudits();
+    setStatus('ready — runtime + bounded agent booted');
     CALL_BTN.disabled = false;
   } catch (err) {
     setStatus(`bootstrap failed: ${err instanceof Error ? err.message : String(err)}`, false);
@@ -84,6 +156,27 @@ CALL_BTN.addEventListener('click', async () => {
   } finally {
     CALL_BTN.disabled = false;
   }
+});
+
+document.querySelector('#sdk-allowed').addEventListener('click', async () => {
+  const r = await bounded.callAgent(
+    { baseUrl: 'http://localhost:4174', path: '/api/agent/search?q=sdk' },
+    { method: 'GET', caps: ['search'] },
+  );
+  SDK_RESULT.textContent = JSON.stringify({ ok: r.ok, decision: r.decision, reason: r.reason ?? null, value: r.value }, null, 2);
+  renderAudits();
+});
+
+document.querySelector('#sdk-denied-tool').addEventListener('click', async () => {
+  const r = await bounded.runTool('remove_all', {});
+  SDK_RESULT.textContent = JSON.stringify({ ok: r.ok, decision: r.decision, reason: r.reason, audit: r.audit && { action: r.audit.action, subject: r.audit.subject, reason: r.audit.reason } }, null, 2);
+  renderAudits();
+});
+
+document.querySelector('#sdk-denied-origin').addEventListener('click', async () => {
+  const r = await bounded.callAgent({ baseUrl: 'https://evil.invalid', path: '/admin' });
+  SDK_RESULT.textContent = JSON.stringify({ ok: r.ok, decision: r.decision, reason: r.reason, audit: r.audit && { action: r.audit.action, subject: r.audit.subject, reason: r.audit.reason } }, null, 2);
+  renderAudits();
 });
 
 bootstrap();

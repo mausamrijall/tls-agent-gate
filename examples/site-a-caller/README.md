@@ -7,7 +7,11 @@ A conforming Open Agentic Web **caller** site. It:
 - signs outbound requests with an Ed25519 key via the browser runtime,
 - routes peer fetching through the WebWorker sandbox,
 - prompts the user for consent before cross-origin agent calls,
-- shows a live Trust & Header Inspector panel.
+- shows a live Trust & Header Inspector panel,
+- runs a **Bounded Agent (SDK)** demo proving the default-deny boundary:
+  an allowed cross-site call succeeds, while an unallowlisted tool and an
+  unallowlisted origin are blocked with machine-readable audit reasons
+  (all events shown in the page's immutable audit feed).
 
 ## Run
 

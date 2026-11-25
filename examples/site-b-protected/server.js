@@ -22,6 +22,8 @@ import { verifyAgentRequest } from '../../packages/verifier/dist/esm/verify.js';
 import { VerificationError } from '../../packages/verifier/dist/esm/types.js';
 import { MemoryNonceStore } from '../../packages/verifier/dist/esm/nonce.js';
 import { MemoryFetchCache } from '../../packages/verifier/dist/esm/cache.js';
+import { createBoundedAgent } from '../../packages/sdk/dist/esm/sdk.js';
+import { createCoreSigner } from '../../packages/sdk/dist/esm/signer.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = join(__dirname, '../..');
@@ -46,6 +48,7 @@ const MANIFEST = {
 let verifierOptions;
 const nonceStore = new MemoryNonceStore();
 const fetchCache = new MemoryFetchCache();
+let serviceAgent; // bounded agent (SDK)
 
 async function ensureSetup() {
   const identityPath = join(PUBLIC_DIR, '.well-known', 'agent-identity.json');
@@ -91,6 +94,60 @@ async function ensureSetup() {
   console.log(`[site-b] allowed dev thumbprints: ${allowedDevKeyThumbprints.join(', ') || '(none — start Site A first)'}`);
 }
 
+// Boot the bounded service agent (SDK): it may only run the 'search' tool
+// and cannot make any outbound calls by itself.
+async function ensureServiceAgent() {
+  const keyRaw = await readFile(join(PUBLIC_DIR, 'keys', 'agent.key.jwk.json'), 'utf8');
+  const privateKeyJwk = JSON.parse(keyRaw);
+  const signer = await createCoreSigner({
+    identityUrl: `http://${DOMAIN}/.well-known/agent-identity.json`,
+    manifestUrl: `http://${DOMAIN}/agent-manifest.json`,
+    privateKeyJwk,
+    manifestText: await readFile(join(PUBLIC_DIR, 'agent-manifest.json'), 'utf8'),
+  });
+  serviceAgent = await createBoundedAgent({
+    agentId: `site-b-protected:${DOMAIN}`,
+    manifest: MANIFEST,
+    identitySigner: signer,
+    policy: {
+      allowedTools: [
+        {
+          name: 'search',
+          argSchema: {
+            type: 'object',
+            properties: { q: { type: 'string' } },
+            required: ['q'],
+            additionalProperties: false,
+          },
+        },
+      ],
+      allowedCommands: [],
+      allowedOrigins: [],
+      allowLocalAgents: false,
+      requireConsentFor: [],
+      maxCallsPerTurn: 100,
+      maxStepsPerTurn: 500,
+      maxPayloadBytes: 8192,
+      executionTimeoutMs: 5000,
+    },
+    tools: [
+      {
+        name: 'search',
+        description: 'Search the protected service corpus',
+        executor: (args) => ({
+          query: args.q,
+          hits: [`result for "${args.q}"`, `another hit for "${args.q}"`],
+        }),
+      },
+    ],
+    commands: {},
+    onAuditEvent: (e) => {
+      // Audits are also mirrored to stdout for server-side visibility.
+      console.log(`[site-b audit] #${e.seq} ${e.action} ${e.kind}:${e.subject}${e.reason ? ` (${e.reason})` : ''}`);
+    },
+  });
+}
+
 function corsHeaders() {
   return {
     'access-control-allow-origin': '*',
@@ -120,6 +177,15 @@ async function handleApi(req, res, url) {
       verifierOptions,
     );
 
+    // Execute the capability through the bounded service agent (SDK).
+    const q = url.searchParams.get('q') ?? '';
+    const toolResult = await serviceAgent.runTool('search', { q });
+    if (!toolResult.ok) {
+      res.writeHead(403, { 'content-type': 'application/json; charset=utf-8', ...corsHeaders() });
+      res.end(JSON.stringify({ error: { code: toolResult.reason ?? 'ERR_CAPABILITY_DENIED', message: 'Service capability denied by bounded agent policy' } }));
+      return;
+    }
+
     res.writeHead(200, {
       'content-type': 'application/json; charset=utf-8',
       ...corsHeaders(),
@@ -134,7 +200,7 @@ async function handleApi(req, res, url) {
           }
         : {}),
     });
-    res.end(JSON.stringify({ ok: true, verifiedDomain: result.domain, answer: `Hello verified agent ${result.domain}!`, query: url.searchParams.get('q') ?? '' }));
+    res.end(JSON.stringify({ ok: true, verifiedDomain: result.domain, query: q, answer: toolResult.value }));
   } catch (err) {
     if (err instanceof VerificationError) {
       res.writeHead(err.statusCode, { 'content-type': 'application/json; charset=utf-8', ...corsHeaders() });
@@ -167,6 +233,11 @@ const server = createServer(async (req, res) => {
       await handleApi(req, res, url);
       return;
     }
+    if (pathname === '/debug/audits') {
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', ...corsHeaders() });
+      res.end(JSON.stringify(serviceAgent.auditTrail(), null, 2));
+      return;
+    }
 
     const staticPath = join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
     const body = await readFile(staticPath);
@@ -186,7 +257,9 @@ const server = createServer(async (req, res) => {
 });
 
 await ensureSetup();
+await ensureServiceAgent();
 server.listen(PORT, HOST, () => {
   console.log(`[site-b] protected service running at http://${DOMAIN}`);
   console.log(`[site-b] protected API: http://${DOMAIN}/api/agent/search?q=agents`);
+  console.log(`[site-b] bounded agent audits: http://${DOMAIN}/debug/audits`);
 });

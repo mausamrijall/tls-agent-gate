@@ -7,7 +7,10 @@ A **protected service agent** behind the `tls-agent-gate` verifier. It:
   allowlisted,
 - verifies Ed25519/P-256 signatures, nonces, timestamps, and (optionally)
   manifest SHA-256 hashes,
-- injects `X-Verified-Agent` and `X-Agent-Manifest` response headers.
+- injects `X-Verified-Agent` and `X-Agent-Manifest` response headers,
+- executes the `search` capability through a **bounded agent (SDK)** that may
+  run only allowlisted tools, and exposes its immutable audit trail at
+  `http://localhost:4174/debug/audits`.
 
 ## Run
 
