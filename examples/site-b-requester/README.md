@@ -10,6 +10,13 @@ The public site hosts all of the Open Agentic Web pieces: a conforming
 a browser runtime file at `/runtime.js`, an interactive UI, an **optional
 LLM/BYOK key config UI** (sessionStorage only), and cross-site interaction.
 
+**Every outbound capability request — including the main "Run signed agent
+call" button — is routed through the Bounded Agent (SDK)** so it is
+allowlist-checked (origin), signed with fresh `X-Agent-*` headers per request,
+and audited. Site B never fetches or executes code from Site A; it only calls
+A's declared, verified endpoints, and A verifies each request (per-request
+nonce anti-replay).
+
 The page demonstrates:
 
 - the **signed runtime call** — the browser runtime signs each request with an

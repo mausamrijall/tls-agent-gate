@@ -1,5 +1,10 @@
 /**
- * Site A caller app — uses the tls-agent-gate browser runtime + SDK.
+ * Site B requester app — uses the tls-agent-gate browser runtime + SDK.
+ *
+ * Every outbound capability request is routed through the Bounded Agent
+ * (SDK): allowlist-checked (origin), signed with X-Agent-* headers, and
+ * audited — Site B never executes or fetches code from Site A; it only
+ * calls A's declared, verified endpoints.
  */
 import {
   AgentRuntime,
@@ -142,18 +147,24 @@ async function bootstrap() {
 }
 
 CALL_BTN.addEventListener('click', async () => {
-  if (!runtime) return;
+  if (!bounded) return;
   CALL_BTN.disabled = true;
-  setStatus('calling peer agent…');
+  setStatus('calling provider (bounded agent)…');
   try {
     const target = new URL(document.querySelector('#target-url').value.trim());
-    const result = await runtime.callAgent(
+    const result = await bounded.callAgent(
       { baseUrl: target.origin, path: target.pathname + target.search },
-      { method: 'GET', caps: ['search'], description: 'Query the protected service agent' },
+      { method: 'GET', caps: ['search'] },
     );
     RESULT.textContent = JSON.stringify(result, null, 2);
-    window.__inspector.renderInto(INSPECTOR_EL);
-    setStatus(result.ok ? `done — HTTP ${result.status}` : result.declined ? 'blocked by consent gate' : `HTTP ${result.status}${result.error ? ` (${result.error})` : ''}`, result.ok || result.declined);
+    renderAudits();
+    if (!result.ok) {
+      // Denied at the boundary (e.g. ERR_ORIGIN_BLOCKED) — nothing was sent.
+      setStatus(`blocked by SDK boundary: ${result.reason ?? 'denied'}`, false);
+      return;
+    }
+    const v = result.value;
+    setStatus(v.verifiedByTarget ? `verified by provider — HTTP ${v.status} (${v.verifiedByTarget.domain})` : `HTTP ${v.status} (unverified response)`, v.ok);
   } catch (err) {
     RESULT.textContent = String(err);
     setStatus('call error', false);
