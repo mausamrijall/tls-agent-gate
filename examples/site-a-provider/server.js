@@ -91,6 +91,15 @@ async function ensureSetup() {
     fetchTimeoutMs: 3000,
     fetchMaxBytes: 65536,
     checkManifest: 'if-present',
+    // Optional beta-mode: enable pre-shared capability tokens via env
+    // (CAPABILITY_TOKEN_SECRET). Helps exercise the non-WAF fallback live.
+    ...(process.env.CAPABILITY_TOKEN_SECRET
+      ? {
+          allowCapabilityTokens: true,
+          capabilityTokenSecret: process.env.CAPABILITY_TOKEN_SECRET,
+          capabilityTokenStore: new MemoryNonceStore(),
+        }
+      : {}),
   };
   console.log(`[site-a] allowed dev thumbprints: ${allowedDevKeyThumbprints.join(', ') || '(none — start Site B first)'}`);
 }

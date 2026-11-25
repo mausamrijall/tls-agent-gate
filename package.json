@@ -17,6 +17,7 @@
     "test:verifier": "npm run test --workspace @tls-agent-gate/verifier",
     "test:browser": "npm run test --workspace @tls-agent-gate/browser",
     "test:cli": "npm run test --workspace @tls-agent-gate/cli",
+    "beta": "node scripts/beta-test.mjs",
     "clean": "npm run clean --workspaces --if-present"
   },
   "keywords": [

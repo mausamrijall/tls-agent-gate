@@ -46,6 +46,7 @@ Profile 0.2** model.
 npm install
 npm run build
 npm test        # runs every package's unit tests
+npm run beta    # live beta test: boots Site A + Site B and runs 30 HTTP-level checks
 ```
 
 ### Run the two-site demo (local, no deployment needed)
