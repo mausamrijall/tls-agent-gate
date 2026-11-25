@@ -1,0 +1,13 @@
+{
+  "name": "site-b-requester",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demo active agent requester: initiates every capability request with signed X-Agent-* headers, gets verified by Site A, and completes the capability flow.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

@@ -22,7 +22,7 @@ import { execFileSync } from 'node:child_process';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = join(__dirname, '../..');
 const PUBLIC_DIR = join(__dirname, 'public');
-const PORT = Number(process.env.PORT || 4173);
+const PORT = Number(process.env.PORT || 4174);
 const HOST = process.env.HOST || 'localhost';
 const DOMAIN = `${HOST}:${PORT}`;
 
@@ -60,7 +60,7 @@ async function ensureSetup() {
   await mkdir(join(PUBLIC_DIR, '.well-known'), { recursive: true });
 
   if (!existsSync(identityPath)) {
-    console.log('[site-a] generating dev identity document…');
+    console.log('[site-b] generating dev identity document…');
     const cliPath = join(ROOT, 'packages/cli/dist/esm/cli.js');
     execFileSync(process.execPath, [cliPath, 'keygen', '--out', PUBLIC_DIR, '--domain', DOMAIN, '--allow-local'], {
       stdio: 'inherit',
@@ -132,6 +132,6 @@ const server = createServer(async (req, res) => {
 
 await ensureSetup();
 server.listen(PORT, HOST, () => {
-  console.log(`[site-a] caller running at http://${DOMAIN}`);
-  console.log(`[site-a] dev identity: http://${DOMAIN}/.well-known/agent-identity.json`);
+  console.log(`[site-b] requester running at http://${DOMAIN}`);
+  console.log(`[site-b] dev identity: http://${DOMAIN}/.well-known/agent-identity.json`);
 });

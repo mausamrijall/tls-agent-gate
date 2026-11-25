@@ -37,8 +37,8 @@ Profile 0.2** model.
 | `packages/browser` | Browser runtime: `WebWorker` sandboxed fetcher/parser, sanitization, user-consent gate, outbound `fetch` wrapper that signs requests and parses `X-Verified-Agent` / `X-Agent-Manifest` responses, BYOK LLM helper, Trust Inspector. |
 | `packages/sdk` | **Bounded Agent Execution SDK** — a default-deny capability & execution boundary: allowlisted tools/commands with schema validation, origin allowlists, `allowLocalAgents` enforcement, budget/rate/timeout caps, redaction, consent gates, signed remote agent calls, and an immutable hash-chained audit trail. |
 | `packages/cli` | `tls-agent-gate` CLI: `keygen`, `validate`, `probe`. |
-| `examples/site-a-caller` | A conforming Open Agentic Web caller site (manifest + browser runtime + UI) that discovers/calls a peer agent with consent. |
-| `examples/site-b-protected` | A protected service agent site behind the verifier that rejects unverified scrapers/localhost callers. |
+| `examples/site-a-provider` | **Passive capability provider** — holds no autonomous agent loop; publishes its identity/manifest and exposes protected capability endpoints behind the verifier (unsigned/untrusted callers get `401/403`). |
+| `examples/site-b-requester` | **Active agent requester** — initiates every capability request with signed `X-Agent-*` headers, gets verified by Site A, and completes the capability flow. |
 
 ## Quick start
 
@@ -51,36 +51,37 @@ npm test        # runs every package's unit tests
 ### Run the two-site demo (local, no deployment needed)
 
 ```bash
-# Terminal 1 — caller site
-npm start --workspace site-a-caller        # http://localhost:4173
+# Terminal 1 — active requester (Site B). Start this first so Site A can
+# auto-discover Site B's dev key thumbprint.
+npm start --workspace site-b-requester     # http://localhost:4174
 
-# Terminal 2 — protected service (starts after the caller so it can
-# auto-discover the caller's dev key thumbprint)
-npm start --workspace site-b-protected     # http://localhost:4174
+# Terminal 2 — passive capability provider (Site A)
+npm start --workspace site-a-provider      # http://localhost:4173
 ```
 
-Then open http://localhost:4173, enter `http://localhost:4174/api/agent/search?q=agents`
-and press **Run signed agent call**. You'll see:
+Then open http://localhost:4174 (Site B), enter
+`http://localhost:4173/api/agent/search?q=agents` and press
+**Run signed agent call**. You'll see:
 
 - the consent prompt before the cross-origin call,
-- a `200` response with `X-Verified-Agent: localhost`,
+- a `200` response with `X-Verified-Agent: localhost` and the provider's answer,
 - the Trust Inspector log with the exact headers exchanged.
 
-The same page also includes a **Bounded Agent (SDK)** panel proving the
+The requester page also includes a **Bounded Agent (SDK)** panel proving the
 default-deny boundary:
 
 - **Allowed cross-site call** — succeeds (signed, consent-gated) and returns
-  the protected service's answer;
+  the provider's capability answer;
 - **Denied: unallowlisted tool** — `ERR_TOOL_NOT_FOUND` from the SDK,
   never executed;
 - **Denied: unallowlisted origin** — `ERR_ORIGIN_BLOCKED` from the SDK,
   never fetched.
 
 Every outcome lands in the immutable, hash-chained audit feed on the page.
-Site B exposes its own bounded-agent audit trail at
-`http://localhost:4174/debug/audits`.
+Site A exposes its provider-side bounded-agent audit trail at
+`http://localhost:4173/debug/audits`.
 
-Meanwhile, `curl http://localhost:4174/api/agent/search?q=agents` (no signature)
+Meanwhile, `curl http://localhost:4173/api/agent/search?q=agents` (no signature)
 returns `401 {"error":{"code":"ERR_MISSING_IDENTITY_HEADER",…}}`.
 
 ### CLI
@@ -185,8 +186,8 @@ This repository is built in five phases (all implemented):
 3. `packages/browser` — browser runtime, consent, WebWorker sandbox.
 4. `packages/cli` — `keygen` / `validate` / `probe`.
 5. `packages/sdk` — Bounded Agent Execution SDK (default-deny boundary).
-6. `examples/` — Site A (caller) and Site B (protected service), plus this
-   documentation.
+6. `examples/` — Site A (passive provider) and Site B (active requester), plus
+   this documentation.
 
 ## License
 

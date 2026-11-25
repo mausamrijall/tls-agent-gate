@@ -25,7 +25,7 @@ function setStatus(text, ok = true) {
 const manifest = {
   schemaVersion: 'agent-manifest-v1',
   agent: `http://${location.host}/agent`,
-  name: 'Caller Site (A)',
+  name: 'Active Requester Site (B)',
   description: 'Demonstrates calling a peer agent behind the tls-agent-gate verifier.',
   version: '1.0.0',
   capabilities: [
@@ -77,7 +77,7 @@ async function bootstrap() {
     // ---- Bounded Agent (SDK) ----------------------------------------
     const gate = new PromptConsentGate();
     bounded = await createBoundedAgent({
-      agentId: 'site-a-caller',
+      agentId: 'site-b-requester',
       manifest,
       identitySigner: {
         identityUrl: runtime.identityUrl,
@@ -99,7 +99,7 @@ async function bootstrap() {
           },
         ],
         allowedCommands: ['status'],
-        allowedOrigins: ['http://localhost:4174', 'http://127.0.0.1:4174'],
+        allowedOrigins: ['http://localhost:4173', 'http://127.0.0.1:4173'],
         allowLocalAgents: true,
         maxCallsPerTurn: 20,
         maxStepsPerTurn: 100,
@@ -160,7 +160,7 @@ CALL_BTN.addEventListener('click', async () => {
 
 document.querySelector('#sdk-allowed').addEventListener('click', async () => {
   const r = await bounded.callAgent(
-    { baseUrl: 'http://localhost:4174', path: '/api/agent/search?q=sdk' },
+    { baseUrl: 'http://localhost:4173', path: '/api/agent/search?q=sdk' },
     { method: 'GET', caps: ['search'] },
   );
   SDK_RESULT.textContent = JSON.stringify({ ok: r.ok, decision: r.decision, reason: r.reason ?? null, value: r.value }, null, 2);

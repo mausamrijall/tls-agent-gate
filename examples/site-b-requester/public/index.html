@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Site A — Agentic Caller</title>
+  <title>Site B — Active Agent Requester</title>
   <style>
     :root { color-scheme: light; }
     body { font-family: system-ui, sans-serif; margin: 0; background: #f6f8fa; color: #0f172a; }
@@ -24,17 +24,17 @@
 </head>
 <body>
   <header>
-    <h1>Site A — Agentic Caller</h1>
-    <p>An Open Agentic Web site. It signs outbound agent requests with an Ed25519 key anchored to its HTTPS/identity origin.</p>
+    <h1>Site B — Active Agent Requester</h1>
+    <p>Initiates every capability request with signed X-Agent-* headers, gets verified by Site A, and completes the capability flow.</p>
   </header>
   <main>
     <section class="card">
       <h2>Call a peer agent</h2>
-      <label for="target-url">Protected endpoint (Site B)</label>
-      <input type="text" id="target-url" value="http://localhost:4174/api/agent/search?q=agents" />
+      <label for="target-url">Protected capability endpoint (Site A)</label>
+      <input type="text" id="target-url" value="http://localhost:4173/api/agent/search?q=agents" />
       <div class="row">
         <button id="call">Run signed agent call</button>
-        <span class="muted">A consent prompt appears before the cross-origin call.</span>
+        <span class="muted">A consent prompt appears before the cross-origin call. Site A verifies our signed request.</span>
       </div>
       <p class="badge" id="status">not started</p>
     </section>

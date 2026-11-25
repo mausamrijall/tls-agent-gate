@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Site B — Protected Service</title>
+  <title>Site A — Passive Capability Provider</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; background: #f6f8fa; color: #0f172a; }
     header { background: #7f1d1d; color: #fff; padding: 18px 28px; }
@@ -17,21 +17,21 @@
 </head>
 <body>
   <header>
-    <h1>Site B — Protected Service Agent</h1>
-    <p>Runs behind the tls-agent-gate verifier. Unverified scrapers and localhost callers are rejected with 401/403.</p>
+    <h1>Site A — Passive Capability Provider</h1>
+    <p>Holds no autonomous agent loop. Publishes its identity/manifest and exposes protected capability endpoints behind the tls-agent-gate verifier — unsigned/untrusted callers are rejected with 401/403.</p>
   </header>
   <main>
     <section class="card">
       <h2>Protected API</h2>
       <p class="muted">
         Try it without an agent signature:
-        <code>curl -i http://localhost:4174/api/agent/search?q=agents</code>
+        <code>curl -i http://localhost:4173/api/agent/search?q=agents</code>
       </p>
       <p class="muted">
         Expected: <code>401 {"error":{"code":"ERR_MISSING_IDENTITY_HEADER",…}}</code>
       </p>
       <p class="muted">
-        Then trigger a signed call from Site A (http://localhost:4173) — the
+        Then trigger a signed call from Site B (http://localhost:4174) — the
         response will include <code>X-Verified-Agent: localhost</code>.
       </p>
     </section>

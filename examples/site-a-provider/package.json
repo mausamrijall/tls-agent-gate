@@ -1,0 +1,13 @@
+{
+  "name": "site-a-provider",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demo passive capability provider: publishes its identity/manifest and exposes protected capability endpoints behind the tls-agent-gate verifier.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

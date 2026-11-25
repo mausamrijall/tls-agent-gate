@@ -16,3 +16,5 @@ dist-test/
 **/.well-known/agent-identity.json
 examples/**/public/.well-known/
 examples/**/public/keys/
+# Generated example manifests (rewritten on server boot)
+examples/**/public/agent-manifest.json

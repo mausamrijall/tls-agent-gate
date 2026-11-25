@@ -28,16 +28,16 @@ import { createCoreSigner } from '../../packages/sdk/dist/esm/signer.js';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = join(__dirname, '../..');
 const PUBLIC_DIR = join(__dirname, 'public');
-const PORT = Number(process.env.PORT || 4174);
+const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || 'localhost';
 const DOMAIN = `${HOST}:${PORT}`;
-const CALLER_URL = process.env.CALLER_URL || 'http://localhost:4173';
+const REQUESTER_URL = process.env.REQUESTER_URL || 'http://localhost:4174';
 
 const MANIFEST = {
   schemaVersion: 'agent-manifest-v1',
   agent: `http://${DOMAIN}/agent`,
-  name: 'Protected Service Agent (B)',
-  description: 'A service agent behind the tls-agent-gate verifier. Rejects unverified scrapers.',
+  name: 'Passive Capability Provider (A)',
+  description: 'Site A holds no autonomous agent loop — it publishes its identity/manifest and exposes protected capability endpoints behind the tls-agent-gate verifier.',
   version: '1.0.0',
   capabilities: [
     { id: 'search', name: 'Search', description: 'Search the protected service' },
@@ -55,7 +55,7 @@ async function ensureSetup() {
   const manifestPath = join(PUBLIC_DIR, 'agent-manifest.json');
   await mkdir(join(PUBLIC_DIR, '.well-known'), { recursive: true });
   if (!existsSync(identityPath)) {
-    console.log('[site-b] generating dev identity document…');
+    console.log('[site-a] generating dev identity document…');
     const cliPath = join(ROOT, 'packages/cli/dist/esm/cli.js');
     execFileSync(process.execPath, [cliPath, 'keygen', '--out', PUBLIC_DIR, '--domain', DOMAIN, '--allow-local'], {
       stdio: 'inherit',
@@ -72,7 +72,7 @@ async function ensureSetup() {
   // Discover the caller (Site A) dev key thumbprint so it can be allowlisted.
   let allowedDevKeyThumbprints = [];
   try {
-    const res = await fetch(`${CALLER_URL}/.well-known/agent-identity.json`, { signal: AbortSignal.timeout(1500) });
+    const res = await fetch(`${REQUESTER_URL}/.well-known/agent-identity.json`, { signal: AbortSignal.timeout(1500) });
     if (res.ok) {
       const doc = await res.json();
       const tp = await thumbprintOfJwk(doc.keys.primary.publicKeyJwk);
@@ -91,7 +91,7 @@ async function ensureSetup() {
     fetchMaxBytes: 65536,
     checkManifest: 'if-present',
   };
-  console.log(`[site-b] allowed dev thumbprints: ${allowedDevKeyThumbprints.join(', ') || '(none — start Site A first)'}`);
+  console.log(`[site-a] allowed dev thumbprints: ${allowedDevKeyThumbprints.join(', ') || '(none — start Site B first)'}`);
 }
 
 // Boot the bounded service agent (SDK): it may only run the 'search' tool
@@ -106,7 +106,7 @@ async function ensureServiceAgent() {
     manifestText: await readFile(join(PUBLIC_DIR, 'agent-manifest.json'), 'utf8'),
   });
   serviceAgent = await createBoundedAgent({
-    agentId: `site-b-protected:${DOMAIN}`,
+    agentId: `site-a-provider:${DOMAIN}`,
     manifest: MANIFEST,
     identitySigner: signer,
     policy: {
@@ -143,7 +143,7 @@ async function ensureServiceAgent() {
     commands: {},
     onAuditEvent: (e) => {
       // Audits are also mirrored to stdout for server-side visibility.
-      console.log(`[site-b audit] #${e.seq} ${e.action} ${e.kind}:${e.subject}${e.reason ? ` (${e.reason})` : ''}`);
+      console.log(`[site-a audit] #${e.seq} ${e.action} ${e.kind}:${e.subject}${e.reason ? ` (${e.reason})` : ''}`);
     },
   });
 }
@@ -259,7 +259,7 @@ const server = createServer(async (req, res) => {
 await ensureSetup();
 await ensureServiceAgent();
 server.listen(PORT, HOST, () => {
-  console.log(`[site-b] protected service running at http://${DOMAIN}`);
-  console.log(`[site-b] protected API: http://${DOMAIN}/api/agent/search?q=agents`);
-  console.log(`[site-b] bounded agent audits: http://${DOMAIN}/debug/audits`);
+  console.log(`[site-a] provider running at http://${DOMAIN}`);
+  console.log(`[site-a] protected capability API: http://${DOMAIN}/api/agent/search?q=agents`);
+  console.log(`[site-a] bounded agent audits: http://${DOMAIN}/debug/audits`);
 });
