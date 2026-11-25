@@ -24,6 +24,7 @@
 export const HEADER_IDENTITY = 'X-Agent-Identity';
 export const HEADER_MANIFEST = 'X-Agent-Manifest';
 export const HEADER_SIGNATURE = 'X-Agent-Signature';
+export const HEADER_TOKEN = 'X-Agent-Token';
 export const HEADER_VERIFIED_AGENT = 'X-Verified-Agent';
 export const HEADER_EXPOSE = 'Access-Control-Expose-Headers';
 

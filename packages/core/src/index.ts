@@ -19,6 +19,8 @@ export * from './crypto.ts';
 export * from './canonical.ts';
 export * from './headers.ts';
 export * from './hostPolicy.ts';
+export * from './capabilityToken.ts';
+export * from './challenge.ts';
 export * from './validate/miniSchema.ts';
 export * from './validate/identity.ts';
 export * from './validate/manifest.ts';

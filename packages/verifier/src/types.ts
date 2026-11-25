@@ -46,6 +46,8 @@ export interface VerificationResult {
   callerPolicy: { allowLocalAgents?: boolean; allowedDevKeyThumbprints?: string[]; requireSignedRequests?: boolean } | null;
   /** True when the caller used a localhost/private-network identity that was explicitly allowlisted. */
   usedLocalAllowlist: boolean;
+  /** How this request was authenticated. */
+  authMethod?: 'signature' | 'capability-token' | 'unsigned';
 }
 
 /** Store used to reject replayed nonces (single-use). */
@@ -102,6 +104,20 @@ export interface VerifyOptions {
   checkManifest?: 'off' | 'if-present' | 'required';
   /** Verify advertised manifest capability ids exist in the fetched manifest (only when manifest is fetched). */
   checkManifestCaps?: boolean;
+  /**
+   * Accept pre-shared capability tokens (`X-Agent-Token`) as authentication
+   * when the signature header is absent — a fallback/alongside mode for
+   * environments without WAF/edge signature verification.
+   */
+  allowCapabilityTokens?: boolean;
+  /** Shared secret for HMAC-SHA-256 capability tokens. */
+  capabilityTokenSecret?: string;
+  /** Store used to enforce single-use `jti` token replay protection. */
+  capabilityTokenStore?: NonceStore;
+  /** When set, token-based requests MUST authorize this capability. */
+  requiredCapability?: string;
+  /** Clock skew tolerance for token expiration (seconds, default 30). */
+  capabilityTokenSkewSeconds?: number;
   /** Nonce store for anti-replay. Defaults to a MemoryNonceStore. */
   nonceStore?: NonceStore;
   /** Fetch cache for identity/manifest documents. Defaults to MemoryFetchCache. */
@@ -141,6 +157,10 @@ export const VerificationErrorCode = {
   ManifestCapUnknown: 'ERR_MANIFEST_CAP_UNKNOWN',
   BodyUnavailable: 'ERR_BODY_UNAVAILABLE',
   BadRequest: 'ERR_BAD_REQUEST',
+  TokenInvalid: 'ERR_TOKEN_INVALID',
+  TokenExpired: 'ERR_TOKEN_EXPIRED',
+  TokenScopeDenied: 'ERR_TOKEN_SCOPE_DENIED',
+  TokenReplayed: 'ERR_TOKEN_REPLAYED',
 } as const;
 
 export type VerificationErrorCodeType = (typeof VerificationErrorCode)[keyof typeof VerificationErrorCode];

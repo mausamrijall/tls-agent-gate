@@ -18,7 +18,9 @@ import {
   HEADER_IDENTITY,
   HEADER_MANIFEST,
   HEADER_SIGNATURE,
+  HEADER_TOKEN,
   importPublicKeyFromJwk,
+  verifyCapabilityToken,
   parseIdentityHeader,
   parseManifestHeader,
   parseSignatureHeader,
@@ -77,6 +79,16 @@ export async function verifyAgentRequest(
 ): Promise<VerificationResult> {
   const o = asOptions(opts);
   const nowSec = (o.now ?? Date.now()) / 1000;
+
+  // ---- 0. Capability-token fallback (non-WAF mode) ------------------
+  // When no signature is present but a pre-shared X-Agent-Token is, verify
+  // the token (least privilege: capability + origin + path scope) instead of
+  // requiring identity + signature. If a signature IS present, the normal
+  // signature path takes precedence.
+  const rawToken = getHeader(req.headers, HEADER_TOKEN);
+  if (o.allowCapabilityTokens && o.capabilityTokenSecret && rawToken && !getHeader(req.headers, HEADER_SIGNATURE)) {
+    return verifyCapabilityTokenMode(req, rawToken, o, nowSec);
+  }
 
   // ---- 1. Identity header -------------------------------------------
   const rawIdentity = getHeader(req.headers, HEADER_IDENTITY);
@@ -137,6 +149,7 @@ export async function verifyAgentRequest(
       return {
         verified: false,
         domain,
+        authMethod: 'unsigned',
         identityUrl,
         keyId: '',
         algorithm: '',
@@ -371,6 +384,74 @@ export async function verifyAgentRequest(
     manifest: manifest ? { url: manifest.url, sha256: manifest.sha256, caps: manifest.caps } : null,
     callerPolicy: identityDoc.policy ?? null,
     usedLocalAllowlist,
+    authMethod: 'signature',
+  };
+}
+
+/**
+ * Token-mode authentication: verify a pre-shared X-Agent-Token as a
+ * fallback when WAF/edge signature verification is not in use. Enforces
+ * least privilege against the request's own origin + path and the required
+ * capability (if configured).
+ */
+async function verifyCapabilityTokenMode(
+  req: VerifierRequest,
+  token: string,
+  o: VerifyOptions,
+  nowSec: number,
+): Promise<VerificationResult> {
+  const essentials = extractRequestEssentials(req);
+
+  let target: URL;
+  try {
+    target = new URL(req.url, `https://${essentials.host}`);
+  } catch {
+    throw new VerificationError(VerificationErrorCode.TokenInvalid, 'Malformed request URL for capability token.', 403);
+  }
+  const origin = target.origin.toLowerCase();
+  const path = target.pathname;
+
+  const verification = await verifyCapabilityToken(token, {
+    secret: o.capabilityTokenSecret!,
+    now: Math.floor(nowSec),
+    skewSeconds: o.capabilityTokenSkewSeconds ?? 30,
+    requireCapability: o.requiredCapability,
+    requireOrigin: origin,
+    requirePath: path,
+  });
+
+  if (!verification.valid) {
+    const reason = verification.reason;
+    if (reason === 'expired' || reason === 'not-yet-valid') {
+      throw new VerificationError(VerificationErrorCode.TokenExpired, 'Capability token expired or not yet valid.', 401);
+    }
+    if (reason === 'scope-capability' || reason === 'scope-origin' || reason === 'scope-path') {
+      throw new VerificationError(VerificationErrorCode.TokenScopeDenied, `Capability token scope denied (${reason}).`, 403);
+    }
+    throw new VerificationError(VerificationErrorCode.TokenInvalid, 'Capability token invalid.', 403);
+  }
+
+  const claims = verification.claims!;
+
+  // Optional single-use jti replay protection.
+  if (claims.jti && o.capabilityTokenStore) {
+    const expiresAtMs = claims.exp * 1000;
+    if (!(await o.capabilityTokenStore.checkAndSet(claims.jti, expiresAtMs))) {
+      throw new VerificationError(VerificationErrorCode.TokenReplayed, 'Capability token has already been used.', 401);
+    }
+  }
+
+  return {
+    verified: true,
+    domain: essentials.host.split(':')[0]!.toLowerCase(),
+    identityUrl: claims.iss ?? `https://${essentials.host}/`,
+    keyId: claims.jti ?? 'capability-token',
+    algorithm: 'HS256',
+    verifiedAt: new Date().toISOString(),
+    manifest: null,
+    callerPolicy: null,
+    usedLocalAllowlist: false,
+    authMethod: 'capability-token',
   };
 }
 

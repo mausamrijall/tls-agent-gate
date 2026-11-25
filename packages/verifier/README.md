@@ -104,6 +104,46 @@ The wrapper attaches the verification headers to every successful response and
 returns `401/403` JSON for unverified requests. A lower-level
 `verifyCloudflareRequest(request, options)` API is also exported.
 
+## Alternate trust modes (no WAF / scoped access)
+
+### 1. Pre-shared capability tokens (`X-Agent-Token`)
+
+For environments without WAF/edge signature verification, the verifier can
+authenticate a scoped **capability token** when the signature header is absent:
+
+```ts
+const result = await verifyAgentRequest(req, {
+  allowCapabilityTokens: true,
+  capabilityTokenSecret: 'shared-hmac-secret',
+  requiredCapability: 'search',      // optional: enforce a capability
+  capabilityTokenStore: new MemoryNonceStore(), // optional: jti single-use replay guard
+});
+```
+
+Tokens are minted with `issueCapabilityToken` (HMAC-SHA-256) and are **least
+privilege**: a token for `search` cannot authorize `delete`, an unrelated
+origin, or an unrelated path. The verifier checks scope against the request's
+own origin + path, `exp`/`nbf`, and (optionally) the `jti` replay store.
+On success, `result.authMethod === 'capability-token'`.
+
+### 2. Short-lived challenge-response (non-WAF origins)
+
+`packages/core` provides `issueChallenge` / `verifyChallengeResponse`: the
+server issues a random single-use challenge (TTL 30–60s), the requester signs
+the canonical challenge payload with its agent key, and the server verifies
+freshness + signature + replay consumption. This proves cryptographic
+possession without any WAF configuration. See
+`packages/core/README.md` for usage.
+
+### 3. Dedicated agent subdomains (`agent.<domain>`)
+
+Host/origin matching is hostname-based, so `agent.example.com` works with zero
+special-case rewrites: serve the identity at
+`https://agent.example.com/.well-known/agent-identity.json`, keep the manifest
+on the same origin, and the subject/origin checks resolve naturally. The
+response header set already includes
+`Access-Control-Expose-Headers: X-Agent-Identity, X-Agent-Manifest, X-Verified-Agent`.
+
 ## Adopting in other backends
 
 The protocol is just HTTP headers + a signed canonical payload + a JSON file,

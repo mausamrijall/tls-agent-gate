@@ -15,6 +15,8 @@ you need is the platform's Web Crypto (`crypto.subtle`), `TextEncoder`, and
 | `canonical` | `buildCanonicalPayload`, `CANONICAL_VERSION` |
 | `headers` | `formatSignatureHeader`, `parseSignatureHeader`, `formatManifestHeader`, `parseManifestHeader`, `formatIdentityHeader`, `parseIdentityHeader`, `formatVerifiedAgentHeader`, header-name constants |
 | `validate` | JSON Schemas (`agentIdentitySchema`, `agentManifestSchema`), `validateIdentityDocument`, `validateManifest`, `validateSchema` (mini JSON Schema engine) |
+| `capabilityToken` | Pre-shared scoped capability tokens (HMAC-SHA-256): `issueCapabilityToken` / `verifyCapabilityToken` with capability + origin + path scope (least privilege), `exp`/`nbf`/`jti`. |
+| `challenge` | Short-lived challenge-response: `issueChallenge` / `verifyChallengeResponse` with TTL + nonce reserve/consume (replay-safe) and canonical signed proof of key possession. |
 
 ## Key handling example
 

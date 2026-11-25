@@ -147,6 +147,23 @@ agent-tls-gate-signature-v1
 <manifest_sha256>  (lowercase hex; empty when not provided)
 ```
 
+## Pragmatic verification / routing modes
+
+For environments **without WAF/Web Bot Auth**, or where scoped access is needed,
+`tls-agent-gate` ships three light helpers:
+
+1. **Pre-Shared Capability Tokens** (`capabilityToken`) — optional scoped tokens
+   bound to allowed capabilities, target origin/path, and `exp`. Verified as a
+   fallback or alongside signature checks. Least privilege: one capability's
+   token cannot authorize unrelated commands or arbitrary origins.
+2. **Short-Lived Challenge-Response** — `issueChallenge` / `verifyChallengeResponse`
+   with a 30–60s TTL and nonce replay protection, so non-WAF origins can verify
+   fresh cryptographic possession.
+3. **Dedicated Agent Subdomains** (`agent.<domain>`) — host/origin matching,
+   CORS (`Access-Control-Expose-Headers: X-Agent-Identity, X-Agent-Manifest,
+   X-Verified-Agent`), and manifest/identity resolution work on `agent.<domain>`
+   with zero special-case rewrites.
+
 ## Security properties & defaults
 
 - **Default deny.** Requests without `X-Agent-Identity` or a valid signature

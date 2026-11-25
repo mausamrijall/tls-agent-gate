@@ -190,6 +190,28 @@ test('rejects missing manifest when manifest check is required', async () => {
   await assertThrowsCode(verifyAgentRequest(req, verifyOptions), VerificationErrorCode.ManifestRequired);
 });
 
+test('supports dedicated agent subdomains (agent.<domain>) without rewrites', async () => {
+  const agent = await makeFakeAgent({ domain: 'agent.example.com' });
+  const { verifyOptions } = await setup({ agent });
+  const req = await buildSignedRequest(agent);
+  const result = await verifyAgentRequest(req, verifyOptions);
+  assert.equal(result.verified, true);
+  assert.equal(result.domain, 'agent.example.com');
+  assert.equal(result.identityUrl, 'https://agent.example.com/.well-known/agent-identity.json');
+});
+
+test('dedicated subdomain subject must match that subdomain origin', async () => {
+  const agent = await makeFakeAgent({ domain: 'agent.example.com', subjectOverride: 'https://agent2.example.com/agent' });
+  const { verifyOptions } = await setup({ agent });
+  const req = await buildSignedRequest(agent);
+  await assertThrowsCode(verifyAgentRequest(req, verifyOptions), VerificationErrorCode.SubjectMismatch);
+});
+
+test('CORS expose-list includes the agent headers', async () => {
+  const { EXPOSE_HEADERS_VALUE } = await import('@tls-agent-gate/core');
+  assert.equal(EXPOSE_HEADERS_VALUE, 'X-Agent-Identity, X-Agent-Manifest, X-Verified-Agent');
+});
+
 test('treats a zero-length body as no body', async () => {
   const { agent, verifyOptions } = await setup();
   const req = await buildSignedRequest(agent); // no body
