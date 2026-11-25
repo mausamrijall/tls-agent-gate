@@ -1,0 +1,41 @@
+{
+  "name": "@tls-agent-gate/core",
+  "version": "0.1.0",
+  "description": "Core protocol primitives for tls-agent-gate: schemas, canonical signing, WebCrypto Ed25519/P-256 keys, and X-Agent-* header codecs. Zero runtime dependencies (standard Web APIs only).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "default": "./dist/esm/index.js"
+    },
+    "./agent-identity.schema.json": "./src/schemas/agent-identity.schema.json",
+    "./agent-manifest.schema.json": "./src/schemas/agent-manifest.schema.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src/schemas"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "open-agentic-web",
+    "agent-identity",
+    "agent-manifest",
+    "ed25519",
+    "p-256",
+    "webcrypto",
+    "signature",
+    "tls"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

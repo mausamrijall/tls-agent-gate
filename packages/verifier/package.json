@@ -1,0 +1,50 @@
+{
+  "name": "@tls-agent-gate/verifier",
+  "version": "0.1.0",
+  "description": "Framework-agnostic request verifier for tls-agent-gate: TLS-anchored identity, localhost/private-origin policy, signature verification, nonce anti-replay, and Node/Cloudflare adapters.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "default": "./dist/esm/index.js"
+    },
+    "./node": {
+      "types": "./dist/esm/adapters/node.d.ts",
+      "default": "./dist/esm/adapters/node.js"
+    },
+    "./cloudflare": {
+      "types": "./dist/esm/adapters/cloudflare.d.ts",
+      "default": "./dist/esm/adapters/cloudflare.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "pretest": "npm run build --workspace @tls-agent-gate/core",
+    "prebuild": "npm run build --workspace @tls-agent-gate/core",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tls-agent-gate/core": "*"
+  },
+  "keywords": [
+    "open-agentic-web",
+    "verifier",
+    "middleware",
+    "cloudflare-workers",
+    "express",
+    "tls",
+    "agent-identity"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

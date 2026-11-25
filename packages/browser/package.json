@@ -1,0 +1,46 @@
+{
+  "name": "@tls-agent-gate/browser",
+  "version": "0.1.0",
+  "description": "Browser runtime for tls-agent-gate: sandboxed WebWorker fetcher, user-consent gate, signed outbound X-Agent-* requests, and a Trust Inspector.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "default": "./dist/esm/index.js"
+    },
+    "./worker": {
+      "types": "./dist/esm/worker.d.ts",
+      "default": "./dist/esm/worker.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "pretest": "npm run build --workspace @tls-agent-gate/core",
+    "prebuild": "npm run build --workspace @tls-agent-gate/core",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tls-agent-gate/core": "*"
+  },
+  "keywords": [
+    "open-agentic-web",
+    "browser",
+    "webworker",
+    "sandbox",
+    "consent",
+    "agents",
+    "trust-inspector"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

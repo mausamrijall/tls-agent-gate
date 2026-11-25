@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Site B — Protected Service</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f6f8fa; color: #0f172a; }
+    header { background: #7f1d1d; color: #fff; padding: 18px 28px; }
+    header h1 { margin: 0; font-size: 20px; }
+    header p { margin: 4px 0 0; opacity: .85; font-size: 13px; }
+    main { max-width: 860px; margin: 24px auto; padding: 0 20px; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 18px; }
+    code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+    .muted { color: #64748b; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Site B — Protected Service Agent</h1>
+    <p>Runs behind the tls-agent-gate verifier. Unverified scrapers and localhost callers are rejected with 401/403.</p>
+  </header>
+  <main>
+    <section class="card">
+      <h2>Protected API</h2>
+      <p class="muted">
+        Try it without an agent signature:
+        <code>curl -i http://localhost:4174/api/agent/search?q=agents</code>
+      </p>
+      <p class="muted">
+        Expected: <code>401 {"error":{"code":"ERR_MISSING_IDENTITY_HEADER",…}}</code>
+      </p>
+      <p class="muted">
+        Then trigger a signed call from Site A (http://localhost:4173) — the
+        response will include <code>X-Verified-Agent: localhost</code>.
+      </p>
+    </section>
+    <section class="card">
+      <h2>Files</h2>
+      <ul class="muted">
+        <li><code>/.well-known/agent-identity.json</code> — TLS-anchored identity (Ed25519)</li>
+        <li><code>/agent-manifest.json</code> — Open Agentic Web manifest</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

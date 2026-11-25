@@ -1,0 +1,39 @@
+{
+  "name": "tls-agent-gate",
+  "version": "0.1.0",
+  "description": "Open-source security & trust layer for the Open Agentic Web — TLS-anchored agent identity, signed agent requests, and a browser sandbox runtime.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:core": "npm run test --workspace @tls-agent-gate/core",
+    "test:verifier": "npm run test --workspace @tls-agent-gate/verifier",
+    "test:browser": "npm run test --workspace @tls-agent-gate/browser",
+    "test:cli": "npm run test --workspace @tls-agent-gate/cli",
+    "clean": "npm run clean --workspaces --if-present"
+  },
+  "keywords": [
+    "open-agentic-web",
+    "agent-identity",
+    "tls",
+    "webcrypto",
+    "ed25519",
+    "verifier",
+    "agents",
+    "trust"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

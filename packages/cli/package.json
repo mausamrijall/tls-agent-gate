@@ -1,0 +1,44 @@
+{
+  "name": "@tls-agent-gate/cli",
+  "version": "0.1.0",
+  "description": "CLI for tls-agent-gate: keygen (identity documents + dev/prod keys), validate (schemas), and probe (live endpoint diagnostics).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "tls-agent-gate": "./dist/esm/cli.js"
+  },
+  "main": "./dist/esm/cli.js",
+  "types": "./dist/esm/cli.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/cli.d.ts",
+      "default": "./dist/esm/cli.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "pretest": "npm run build --workspace @tls-agent-gate/core",
+    "prebuild": "npm run build --workspace @tls-agent-gate/core",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tls-agent-gate/core": "*"
+  },
+  "keywords": [
+    "open-agentic-web",
+    "cli",
+    "keygen",
+    "validate",
+    "probe",
+    "tls-agent-gate"
+  ],
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

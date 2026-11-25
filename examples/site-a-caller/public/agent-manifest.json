@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "agent-manifest-v1",
+  "agent": "http://localhost:4173/agent",
+  "name": "Caller Site (A)",
+  "description": "Demonstrates discovering and calling a peer agent behind the tls-agent-gate verifier.",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "id": "search",
+      "name": "Search",
+      "description": "Search an agent endpoint"
+    },
+    {
+      "id": "quote",
+      "name": "Quote",
+      "description": "Request a quote from a service agent"
+    }
+  ]
+}

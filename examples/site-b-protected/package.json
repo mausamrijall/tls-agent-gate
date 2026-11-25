@@ -1,0 +1,13 @@
+{
+  "name": "site-b-protected",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demo protected service: a service agent behind the tls-agent-gate verifier that rejects unverified scrapers and localhost callers.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

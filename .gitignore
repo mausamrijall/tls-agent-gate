@@ -1,0 +1,18 @@
+node_modules/
+dist/
+dist-test/
+*.tsbuildinfo
+*.log
+.DS_Store
+.env
+.env.*
+!*.example
+
+# Never commit private key material created by the CLI / demos
+**/keys/
+**/keys-dev/
+**/keys-prod/
+# Generated TLS-anchored identity documents (serve at deploy time instead)
+**/.well-known/agent-identity.json
+examples/**/public/.well-known/
+examples/**/public/keys/

@@ -1,0 +1,13 @@
+{
+  "name": "site-a-caller",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demo caller site: a conforming Open Agentic Web site that discovers and calls a peer agent behind the tls-agent-gate verifier.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

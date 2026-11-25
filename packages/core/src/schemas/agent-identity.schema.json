@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/mausamrijall/tls-agent-gate/blob/main/packages/core/src/schemas/agent-identity.schema.json",
+  "title": "Agent Identity Document",
+  "description": "TLS-anchored agent identity served at https://<domain>/.well-known/agent-identity.json",
+  "type": "object",
+  "required": ["schemaVersion", "subject", "createdAt", "keys"],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": "agent-identity-v1"
+    },
+    "subject": {
+      "type": "string",
+      "format": "uri",
+      "minLength": 1
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "manifestUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "keys": {
+      "type": "object",
+      "required": ["primary"],
+      "properties": {
+        "primary": {
+          "$ref": "#/definitions/agentKey"
+        },
+        "secondary": {
+          "$ref": "#/definitions/agentKey"
+        }
+      }
+    },
+    "policy": {
+      "$ref": "#/definitions/policy"
+    }
+  },
+  "definitions": {
+    "agentKey": {
+      "type": "object",
+      "required": ["alg", "kid", "publicKeyJwk"],
+      "properties": {
+        "alg": {
+          "enum": ["Ed25519", "ES256"]
+        },
+        "kid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "use": {
+          "enum": ["sig"]
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "publicKeyJwk": {
+          "type": "object",
+          "required": ["kty", "crv", "x"],
+          "properties": {
+            "kty": {
+              "type": "string"
+            },
+            "crv": {
+              "type": "string"
+            },
+            "x": {
+              "type": "string"
+            },
+            "y": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "allowLocalAgents": {
+          "type": "boolean"
+        },
+        "allowedDevKeyThumbprints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "requireSignedRequests": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
