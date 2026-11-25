@@ -41,6 +41,7 @@ const MANIFEST = {
   version: '1.0.0',
   capabilities: [
     { id: 'search', name: 'Search', description: 'Search the protected service' },
+    { id: 'status', name: 'Status', description: 'Provider reachability/status check' },
   ],
 };
 
@@ -121,7 +122,7 @@ async function ensureServiceAgent() {
           },
         },
       ],
-      allowedCommands: [],
+      allowedCommands: ['status'],
       allowedOrigins: [],
       allowLocalAgents: false,
       requireConsentFor: [],
@@ -140,7 +141,9 @@ async function ensureServiceAgent() {
         }),
       },
     ],
-    commands: {},
+    commands: {
+      status: () => ({ up: true, provider: 'Site A — Passive Capability Provider', capability: 'status' }),
+    },
     onAuditEvent: (e) => {
       // Audits are also mirrored to stdout for server-side visibility.
       console.log(`[site-a audit] #${e.seq} ${e.action} ${e.kind}:${e.subject}${e.reason ? ` (${e.reason})` : ''}`);
@@ -177,12 +180,17 @@ async function handleApi(req, res, url) {
       verifierOptions,
     );
 
-    // Execute the capability through the bounded service agent (SDK).
+    // Execute the declared capability through the bounded service agent (SDK).
+    // Every capability is an explicit, schema-validated allowlisted action —
+    // never arbitrary/remote code.
     const q = url.searchParams.get('q') ?? '';
-    const toolResult = await serviceAgent.runTool('search', { q });
-    if (!toolResult.ok) {
+    const isStatus = url.pathname.endsWith('/status');
+    const capResult = isStatus
+      ? await serviceAgent.runCommand('status')
+      : await serviceAgent.runTool('search', { q });
+    if (!capResult.ok) {
       res.writeHead(403, { 'content-type': 'application/json; charset=utf-8', ...corsHeaders() });
-      res.end(JSON.stringify({ error: { code: toolResult.reason ?? 'ERR_CAPABILITY_DENIED', message: 'Service capability denied by bounded agent policy' } }));
+      res.end(JSON.stringify({ error: { code: capResult.reason ?? 'ERR_CAPABILITY_DENIED', message: 'Capability denied by bounded agent policy' } }));
       return;
     }
 
@@ -200,7 +208,7 @@ async function handleApi(req, res, url) {
           }
         : {}),
     });
-    res.end(JSON.stringify({ ok: true, verifiedDomain: result.domain, query: q, answer: toolResult.value }));
+    res.end(JSON.stringify({ ok: true, verifiedDomain: result.domain, capability: isStatus ? 'status' : 'search', query: q, answer: capResult.value }));
   } catch (err) {
     if (err instanceof VerificationError) {
       res.writeHead(err.statusCode, { 'content-type': 'application/json; charset=utf-8', ...corsHeaders() });

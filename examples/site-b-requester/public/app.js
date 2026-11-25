@@ -5,6 +5,10 @@ import {
   AgentRuntime,
   PromptConsentGate,
   TrustInspector,
+  clearLlmConfig,
+  configureLlm,
+  loadLlmConfig,
+  saveLlmConfig,
 } from '/vendor/@tls-agent-gate/browser/index.js';
 import { createBoundedAgent } from '/vendor/@tls-agent-gate/sdk/index.js';
 
@@ -179,4 +183,51 @@ document.querySelector('#sdk-denied-origin').addEventListener('click', async () 
   renderAudits();
 });
 
+// ---- Optional LLM / BYOK config UI -------------------------------------
+const LLM_PROVIDER = document.querySelector('#llm-provider');
+const LLM_MODEL = document.querySelector('#llm-model');
+const LLM_KEY = document.querySelector('#llm-key');
+const LLM_PROMPT = document.querySelector('#llm-prompt');
+const LLM_OUTPUT = document.querySelector('#llm-output');
+
+function populateLlmFields() {
+  const cfg = loadLlmConfig();
+  if (!cfg) return;
+  LLM_PROVIDER.value = cfg.provider;
+  LLM_MODEL.value = cfg.model;
+  LLM_KEY.value = cfg.apiKey ?? '';
+}
+
+document.querySelector('#llm-save').addEventListener('click', () => {
+  saveLlmConfig({
+    provider: LLM_PROVIDER.value,
+    model: LLM_MODEL.value.trim(),
+    apiKey: LLM_KEY.value.trim(),
+  });
+  LLM_OUTPUT.textContent = 'Key saved to sessionStorage (this tab only).';
+});
+
+document.querySelector('#llm-clear').addEventListener('click', () => {
+  clearLlmConfig();
+  LLM_KEY.value = '';
+  LLM_OUTPUT.textContent = 'Saved key cleared.';
+});
+
+document.querySelector('#llm-run').addEventListener('click', async () => {
+  const cfg = loadLlmConfig();
+  if (!cfg || !cfg.apiKey) {
+    LLM_OUTPUT.textContent = 'No API key configured — save one first.';
+    return;
+  }
+  try {
+    LLM_OUTPUT.textContent = 'completing…';
+    const llm = configureLlm(cfg, window.__inspector);
+    const { text } = await llm.complete(LLM_PROMPT.value.trim() || 'Hello');
+    LLM_OUTPUT.textContent = text;
+  } catch (err) {
+    LLM_OUTPUT.textContent = `LLM error: ${err instanceof Error ? err.message : String(err)}`;
+  }
+});
+
+populateLlmFields();
 bootstrap();

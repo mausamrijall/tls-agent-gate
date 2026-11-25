@@ -5,6 +5,11 @@ capability request with signed `X-Agent-Identity` / `X-Agent-Manifest` /
 `X-Agent-Signature` headers**, gets verified by Site A, and completes the
 capability flow.
 
+The public site hosts all of the Open Agentic Web pieces: a conforming
+`agent-manifest.json`, an identity document at `/.well-known/agent-identity.json`,
+a browser runtime file at `/runtime.js`, an interactive UI, an **optional
+LLM/BYOK key config UI** (sessionStorage only), and cross-site interaction.
+
 The page demonstrates:
 
 - the **signed runtime call** — the browser runtime signs each request with an
@@ -12,7 +17,9 @@ The page demonstrates:
   echoes back `X-Verified-Agent`,
 - a **Bounded Agent (SDK)** panel — an allowed cross-site call succeeds, while
   an unallowlisted tool and an unallowlisted origin are blocked with clear
-  audit reasons (all events appear in the immutable, hash-chained audit feed).
+  audit reasons (all events appear in the immutable, hash-chained audit feed),
+- an **optional LLM / BYOK key config UI** — provider + model + API key
+  stored in sessionStorage only, used through `configureLlm`.
 
 ## Run
 

@@ -5,13 +5,14 @@ the flow:
 
 - publishes its Open Agentic Web identity
   (`/.well-known/agent-identity.json`) and manifest (`agent-manifest.json`),
-- exposes protected capability endpoints (`/api/agent/*`) behind the
-  `tls-agent-gate` verifier,
+- exposes declared capability endpoints (`/api/agent/search`, `/api/agent/status`)
+  behind the `tls-agent-gate` verifier,
 - rejects unsigned/untrusted callers with `401/403`,
 - accepts signed requests from an allowlisted requester, injects
   `X-Verified-Agent` + `X-Agent-Manifest`, and completes the capability flow,
 - executes each capability through a bounded agent (SDK) that may only run
-  allowlisted tools, with an immutable audit trail.
+  allowlisted tools/commands with schema validation — never arbitrary or
+  unverified remote code — and maintains an immutable audit trail.
 
 ## Run
 

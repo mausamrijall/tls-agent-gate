@@ -50,6 +50,31 @@
     </section>
 
     <section class="card">
+      <h2>Optional LLM / BYOK key config</h2>
+      <p class="muted">
+        Provider + API key for agent-side completions. Keys live in
+        <code>sessionStorage</code> only — never localStorage, cookies, or the
+        agent runtime.
+      </p>
+      <div class="row" style="flex-wrap:wrap">
+        <select id="llm-provider">
+          <option value="anthropic">Anthropic</option>
+          <option value="openai">OpenAI</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input type="text" id="llm-model" placeholder="model (e.g. claude-sonnet-5)" style="width:auto;flex:1;min-width:220px" />
+        <input type="password" id="llm-key" placeholder="API key (sessionStorage only)" style="width:auto;flex:1;min-width:220px" />
+      </div>
+      <div class="row" style="flex-wrap:wrap">
+        <button id="llm-save">Save key</button>
+        <button id="llm-clear" style="background:#64748b">Clear</button>
+        <button id="llm-run">Complete sample prompt</button>
+      </div>
+      <input type="text" id="llm-prompt" value="Summarize what the provider returned." />
+      <pre id="llm-output">—</pre>
+    </section>
+
+    <section class="card">
       <h2>Bounded Agent (SDK)</h2>
       <p class="muted">
         Every action is checked against the SDK's deny-by-default capability
